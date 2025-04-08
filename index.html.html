@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Infinite Ground Game</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+      canvas {
+        display: block;
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.js"></script>
+  </head>
+  <body>
+    <script>
+      let width = window.innerWidth;
+      let height = window.innerHeight;
+      let cursors;
+
+      const config = {
+        type: Phaser.AUTO,
+        width: width,
+        height: height,
+        backgroundColor: "#1d1d1d",
+        physics: {
+          default: "arcade",
+          arcade: {
+            debug: false,
+            gravity: { y: 0 },
+          },
+        },
+        scene: {
+          preload: preload,
+          create: create,
+          update: update,
+        },
+      };
+
+      const game = new Phaser.Game(config);
+
+      function preload() {
+        this.load.image("grass", "./grass.png");
+        this.load.image("house", "./house.png");
+        this.load.image("miner", "./miner.png");
+        this.load.spritesheet("player", "/atlas.png", {
+          frameWidth: 196 / 6,
+          frameHeight: 86 / 2,
+        });
+      }
+
+      function create() {
+        const worldWidth = width * 2;
+        const worldHeight = height * 2;
+        this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
+        this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
+        this.ground = this.add
+          .tileSprite(0, 0, worldWidth, worldHeight, "grass")
+          .setOrigin(0);
+        this.player = this.physics.add
+          .sprite(worldWidth / 3, worldHeight / 3, "player", 4)
+          .setScale(1.5)
+          .setCircle(20, -5, 0)
+          .setDepth(5)
+          .setCollideWorldBounds(true);
+
+        this.player.speed = 250;
+        createPlayerAnimations(this);
+        this.cameras.main.startFollow(this.player);
+        this.house = this.add.group();
+        let house1 = this.physics.add
+          .image(width / 2, height / 2, "house")
+          .setSize(60, 50)
+          .setImmovable(true)
+          .setScale(2)
+          .setOffset(40, 15);
+        let house2 = this.physics.add
+          .image(width, height * 1.6, "house")
+          .setSize(60, 50)
+          .setImmovable(true)
+          .setScale(2)
+          .setOffset(40, 15);
+        let house3 = this.physics.add
+          .image(width * 1.6, height * 1.2, "house")
+          .setSize(60, 50)
+          .setImmovable(true)
+          .setScale(2)
+          .setOffset(40, 15);
+        this.house.add(house1);
+        this.house.add(house2);
+        this.house.add(house3);
+
+        this.roundedBox = this.add
+          .graphics()
+          .fillStyle(0xaf98db, 1)
+          .fillRoundedRect(width / 2 - 140, 50 + 15, 280, 70, 16);
+        this.boxText = this.add
+          .text(width / 2, 100, "Find all the Houses", {
+            fontFamily: "Arial",
+            fontSize: "24px",
+            color: "#ffffff",
+            align: "center",
+          })
+          .setOrigin(0.5);
+
+        this.physics.add.collider(this.player, this.house);
+
+        cursors = this.input.keyboard.createCursorKeys();
+      }
+
+      function createPlayerAnimations(scene) {
+        // frames: [6, 7, 10],
+        scene.anims.create({
+          key: "left",
+          frames: scene.anims.generateFrameNumbers("player", {
+            frames: [6, 7, 10],
+          }),
+          frameRate: 10,
+          repeat: -1,
+        });
+        scene.anims.create({
+          key: "right",
+          frames: scene.anims.generateFrameNumbers("player", {
+            frames: [5, 8, 11],
+          }),
+          frameRate: 10,
+          repeat: -1,
+        });
+        scene.anims.create({
+          key: "up",
+          frames: scene.anims.generateFrameNumbers("player", {
+            frames: [3, 4, 9],
+          }),
+          frameRate: 10,
+          repeat: -1,
+        });
+        scene.anims.create({
+          key: "down",
+          frames: scene.anims.generateFrameNumbers("player", {
+            frames: [0, 1, 2],
+          }),
+          frameRate: 10,
+          repeat: -1,
+        });
+        scene.anims.create({
+          key: "idle",
+          frames: scene.anims.generateFrameNumbers("player", {
+            frames: [0],
+          }),
+          frameRate: 1,
+        });
+      }
+
+      function update() {
+        const speed = this.player.speed;
+        this.player.setVelocity(0);
+
+        if (cursors.left.isDown) {
+          this.player.setVelocityX(-speed);
+        } else if (cursors.right.isDown) {
+          this.player.setVelocityX(speed);
+        }
+        if (cursors.up.isDown) {
+          this.player.setVelocityY(-speed);
+        } else if (cursors.down.isDown) {
+          this.player.setVelocityY(speed);
+        }
+
+        const velocity = this.player.body.velocity;
+        if (velocity.x > 0) {
+          this.player.anims.play("right", true);
+        } else if (velocity.x < 0) {
+          this.player.anims.play("left", true);
+        } else if (velocity.y > 0) {
+          this.player.anims.play("down", true);
+        } else if (velocity.y < 0) {
+          this.player.anims.play("up", true);
+        } else {
+          this.player.anims.play("idle", true);
+        }
+
+        this.roundedBox.x = this.cameras.main.scrollX;
+        this.roundedBox.y = this.cameras.main.scrollY;
+        this.boxText.x = this.cameras.main.scrollX + width / 2;
+        this.boxText.y = this.cameras.main.scrollY + 100;
+      }
+    </script>
+  </body>
+</html>
